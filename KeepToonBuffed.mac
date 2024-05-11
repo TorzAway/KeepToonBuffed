@@ -1,0 +1,511 @@
+|---------------------------------------------------------------------------------
+|
+|  KeepToonBuffed2 by tweeb
+|  based on KeepToonBuffed.mac by TreeHuginDruid
+|
+|   This macro is designed to allow an out of group PowerLeveling toon
+|   to be able to target members of a low level group, heal, 
+|   and maintain buffs on them.
+|
+|  --- Credit goes out to Maskoi as well, for providing the CreateIni and LoadInI code -
+|  --- (Ripped from ShamBot)
+|
+|---------------------------------------------------------------------------------
+
+#turbo 80
+
+#Event SpellBlocked "#*#Your #1# spell did not take hold on #2#. (Blocked by #3#.)#*#"
+#Event SpellBlocked "#*#Your #1# spell did not take hold on #2#.#*#"
+
+|---------------------------------------------------------------------------------
+Sub Main
+
+|---------------------------------------------------------------------------------
+| ---- Turn off melee functions and turn on "Target Group Buff" setting ----------
+/if (${Bool[${Plugin[MQ2Melee]}]}) /squelch /melee off
+/squelch /target clear
+|---------------------------------------------------------------------------------
+
+|==================== DO NOT ALTER THESE VALUES ====================
+/declare MacroName		string	outer	KeepToonBuffed
+/declare KeepToonBuffVer	string	outer	2.0.1
+/declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
+/declare FirstRun			int		outer	0
+/if ( !${Ini[${IniFileName}].Length} ) {
+	/call CreateIni
+	/varset FirstRun 1
+}
+
+| ################## Set up [General] values
+/call LoadIni General MacroVer				string	${KeepToonBuffVer}
+/call LoadIni General AutoAnnounce			bool	FALSE
+/call LoadIni General Debug					bool	FALSE
+/call LoadIni General AdminDebug			bool	FALSE
+/call LoadIni General DebugINI				bool	FALSE
+/call LoadIni General FollowGroup			int		0
+/call LoadIni General FollowDist			int		30
+/call LoadIni General DanNetDelay 			int 	20
+/declare MyMDist 							int 	outer	${FollowDist}-5
+/call LoadIni General SpellSetName			string	NULL
+
+| ################## Set up [Mana] values
+/call LoadIni Mana MinManaPct				int		20
+/call LoadIni Mana MinManaMedPct			int		100
+
+| ################## Set up [Heal] values
+/call LoadIni Heal HealsOn					int		1
+/call LoadIni Heal HealSpell				string	NULL
+/call LoadIni Heal HealPct					int		60
+/declare HealSpellRange 					int 	outer 	${Spell[${HealSpell}].Range}
+
+| ################## Set up [Toons] values
+/call LoadIni Toons NumberOfToons			int		6
+/declare MyBuffTargetName[${NumberOfToons}]	string	outer 
+/call LoadIni Toons MyBuffTargetName		string	NULL	MyBuffTargetName
+
+| ################## Set up [Buffs] values
+/call LoadIni Buffs BuffsOn					int		1
+/call LoadIni Buffs NumberOfBuffs			int		5
+/call LoadIni Buffs TargetBuffNameHelp 		string 	outer	"Name of Spell to Cast|Name of Buff Effect in Buff Window"
+/declare TargetBuffName[${NumberOfBuffs}]	string	outer
+/call LoadIni Buffs TargetBuffName			string	NULL	TargetBuffName
+
+| ################## Set up [Assist] values
+/call LoadIni Assist AssistOn				int		0
+/call LoadIni Assist AssistSpellHelp 		string 	outer	"Name of Spell to Cast|Name of Buff Effect in Buff Window. Set SpamAssistSpell=1 if you want to continuously cast."
+/call LoadIni Assist AssistSpell			string	outer	"Ensnaring Roots"
+/call LoadIni Assist AssistPct				int		60
+/call LoadIni Assist SpamAssistSpell		int 	0
+
+/if (${FirstRun}) {
+	/echo Created INI file ${IniFileName} with default values
+	/echo Please edit the file and restart
+	/echo Ending Macro
+	/end
+} else {
+	/echo Config loaded from ${IniFileName}
+}
+
+
+/call VersionControl
+/call CheckPlugin MQ2Cast
+/call CheckPlugin MQ2Nav
+/call CheckPlugin MQ2DanNet
+/if (${FollowGroup} && !${Navigation.MeshLoaded}) {
+	/echo No nav mesh loaded! You will need a mesh for this zone in order for follow to work
+	/echo Turning off FollowGroup
+	/varset FollowGroup 0
+}
+|==================== DO NOT ALTER THESE VALUES ====================
+
+|---------------------------------------------------------------------------------
+/echo KeepToonBuffed.mac - Version: ${MacroVer} by tweeb
+/echo Original macro by TreeHuginDruid (RIP)
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+/if (${Defined[SpellSetName]} && ${SpellSetName.NotEqual[NULL]}) {
+    /echo Memming spellset (${SpellSetName}).
+    /memspellset ${SpellSetName}
+    /delay 5s
+}   
+|---------------------------------------------------------------------------------
+
+:loop 
+
+    /if (${HealsOn})  /call CheckMyHealth
+    /if (${HealsOn})  /call CheckTargetHealth
+    /if (${BuffsOn})  /call MaintainTargetBuffs
+    /if ((${Me.PctMana}<=${MinManaPct}) && !${Me.CombatState.Equal[COMBAT]}) /call CheckMana
+    /if (${FollowGroup}) /call FollowAround
+    /if (${AssistOn}) /call AssistOnTarget
+    |Internal second delay to allow for manual moving, prevents constant sit loop if only 1 toon being buffed.
+    /delay 10
+    /if (${Me.Standing} && !${Me.Casting.ID} && !${Me.CombatState.Equal[COMBAT]} && !${Me.Moving} && !${Me.Mount.ID}) /sit 
+  
+/goto :loop
+
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: VersionControl
+|---------------------------------------------------------------------------------
+Sub VersionControl
+	/if (${MacroVer.NotEqual[${KeepToonBuffVer}]}) {
+		/echo Version mismatch detected, please wait until this is corrected.
+		/ini "${IniFileName}" "General" "MacroVer" "${KeepToonBuffVer}"
+		/echo Version information updated.
+		/call LoadIni General MacroVer	string	${KeepToonBuffVer}
+	}
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: CheckPlugin
+|---------------------------------------------------------------------------------
+Sub CheckPlugin(string pluginname)
+
+/if (!${Bool[${Plugin[${pluginname}]}]}) {
+    /squelch /plugin ${pluginname}
+    /echo ${pluginname} not detected! This macro requires it! Loading ...
+}
+    
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: CreateIni
+|---------------------------------------------------------------------------------
+Sub CreateIni
+	/if (${Ini[${IniFileName}].Length}) /return
+	/declare a local General|Mana|Heal|Toons|Buffs|
+	/declare i int local 1
+	/for i 1 to 5
+	/ini ${IniFileName} "${a.Arg[${i},|]}" "|===================================" "==================================|"
+	/next i
+
+/return
+|---------------------------------------------------------------------------------
+
+|----------------------------------------------------------------------------------
+| Ripped  off from kissassist with minimal modification -- some code is irrelevant
+| ---------------------------------------------------------------------------------
+Sub LoadIni(string sectionName, string varName, string varType, string varValue, string varArray, string FileName)
+	/declare rkTemp                 string      local
+	/declare UtilInt                int         local        0
+	/declare FileName1              string      local        ${FileName}
+	/declare RezCount               int         local        0
+	| Assign ini name to default ini if not defined
+	/if (${FileName1.Length}==0  || ${FileName1.Equal[NULL]}) {
+		/varset FileName1 ${IniFileName}
+	}
+	| Check if ini value is asking for an array ie buff1 to buff20
+	/if (${Bool[${varArray}]}) {
+		/if (${${varArray}.Size}>0) {
+			/declare i int local
+			/for i 1 to ${${varArray}.Size}
+				/if (${sectionName.NotEqual[KConditions]}) {
+					/if (!${Ini[${FileName1},${sectionName},${varArray}${i}].Length}) {
+						/ini "${FileName1}" "${sectionName}" "${varArray}${i}" "${varValue}"
+					} else {
+						/varset ${varArray}[${i}] ${Ini[${FileName1},${sectionName},${varArray}${i}]}
+					}
+					/if (${${varArray}[${i}].NotEqual[NULL]} && ${${varArray}[${i}].Left[1].NotEqual[;]}) {
+
+						| code to fix the Heal PCT for those zones Crypt of Sul, that knock your HPs down to
+						/if (${Int[${${varArray}[${i}].Arg[2,|].Left[1]}]}>0) {
+							/if (${sectionName.Equal[Heals]}) {
+								/if (${${varArray}[${i}].Arg[3,|].Find[rez]}) {
+									/varcalc RezCount ${RezCount}+1
+									/if (${RezCount}<=${AutoRez.Size}) {
+										/varset AutoRez[${RezCount}] ${${varArray}[${i}]}
+										/varset ${varArray}[${i}] NULL
+									}
+								} else /if (${Select[${Zone.ID},795,796]}) {
+									/varcalc UtilInt ${Int[${${varArray}[${i}].Arg[2,|]}]}*.7
+									/varset ${varArray}[${i}] ${${varArray}[${i}].Replace[|${${varArray}[${i}].Arg[2,|]},|${UtilInt}]}
+								}
+							} else /if (${sectionName.Equal[DPS]} && ${${varArray}[${i}].Arg[3,|].Equal[debuffall]}) {
+								/varcalc UtilInt ${Int[${${varArray}[${i}].Arg[2,|]}]}+100
+								/varset ${varArray}[${i}] ${${varArray}[${i}].Replace[|${${varArray}[${i}].Arg[2,|]},|${UtilInt}]}
+							} else /if (${sectionName.Equal[Aggro]} && ${${varArray}[${i}].Arg[3,|].Equal[<<]}) {
+								/varcalc UtilInt ${Int[${${varArray}[${i}].Arg[2,|]}]}+100
+								/varset ${varArray}[${i}] ${${varArray}[${i}].Replace[|${${varArray}[${i}].Arg[2,|]},|${UtilInt}]}
+							}
+						} else /if (${sectionName.Equal[Heals]}) {
+							/if (${${varArray}[${i}].Arg[3,|].Find[rez]}) {
+								/varcalc RezCount ${RezCount}+1
+								/if (${RezCount}<=${AutoRez.Size}) {
+									/varset AutoRez[${RezCount}] ${${varArray}[${i}]}
+									/varset ${varArray}[${i}] NULL
+								}
+							}
+						}
+					} else {
+						/varset ${varArray}[${i}] NULL
+					}
+				} else {
+					/if (!${Ini[${FileName1},${sectionName},${varArray}${i}].Length}) {
+						/ini "${FileName1}" "${sectionName}" "${varArray}${i}" "${varValue}"
+					} else {
+						/varset ${varArray}[${i}]  ${Ini[${FileName1},${sectionName},${varArray}${i},NULL,noparse]}
+					}
+				}
+			/next i
+			/return
+		}
+	} else {
+		/if (!${Defined[${varName}]} && ${Select[${varType},string,float,int,bool]}>0) {
+			/declare ${varName} ${varType} outer 0
+			/if (!${Ini[${FileName1},${sectionName},${varName}].Length}) {
+				/if (${varValue.Length}) {
+					/ini "${FileName1}" "${sectionName}" "${varName}" "${varValue}"
+					/varset ${varName} ${varValue}
+				}
+			} else {
+				/varset ${varName} ${Ini[${FileName1},${sectionName},${varName}]}
+			}
+		}
+	}
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: CheckMyHealth
+|---------------------------------------------------------------------------------
+Sub CheckMyHealth
+
+/if (${Me.PctHPs}<=${HealPct}) {
+    /if (${Target.ID}!=${Me.ID}) {
+         /if (${Debug}) /echo Attempting to target (${Me.CleanName}) for heals!
+         /squelch /target id ${Me.ID} pc targetable
+         /delay 15 !${Target.ID}   
+		 /echo My health is ${Me.PctHPs}, healing myself with ${HealSpell}
+         /casting "${HealSpell}" gem8
+         /call WaitSpellReady
+    }
+}
+
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: CastSpell
+|---------------------------------------------------------------------------------
+Sub CastSpell(int SpellTarget, string SpellToCast)
+	/if (${AdminDebug}) {
+		/echo CastSpell called with ${SpellTarget}, ${SpellToCast}
+	}
+	/squelch /target id ${SpellTarget}
+	/delay 10 ${Target.ID}==${SpellTarget}
+	/if (${Me.GemTimer[${Spell}]}==0 || ${Me.SpellReady[${SpellToCast}]}) {
+		/cast "${SpellToCast}"
+	}
+	/delay 10
+	/call WaitSpellReady
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: QueryHealth
+|---------------------------------------------------------------------------------
+Sub QueryHealth(string name)
+	/declare result int local
+	/dquery ${name} -q "Me.PctHPs" -o result -t ${DanNetDelay}
+/return ${result}
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: CheckTargetHealth
+|---------------------------------------------------------------------------------
+Sub CheckTargetHealth
+
+	/declare j int local
+	/declare currentHealth int local
+
+	/for j 1 to ${NumberOfToons}
+		/if (${Spawn[=${MyBuffTargetName[${j}]}].ID} || (${Spawn[=${MyBuffTargetName[${j}]}].ID} && ${MyBuffTargetName[${j}].NotEqual[NULL]})) {
+			/if (${Debug}) /echo \ao Attempting to query \at (${MyBuffTargetName[${j}]}) \ao for \ar health \ao check.
+			/call QueryHealth ${MyBuffTargetName[${j}]}
+			/varset currentHealth ${Macro.Return}  
+
+			/if ((${currentHealth}<=${HealPct}) && (${Target.Distance}<=${HealSpellRange})) {
+				/echo ${MyBuffTargetName[${j}]}'s health at (${currentHealth}), HEAL TIME !!!!
+				/call CastSpell ${Spawn[${MyBuffTargetName[${j}]}].ID} "${HealSpell}"
+			}
+		}
+		
+	/next j
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: QueryBuff
+|---------------------------------------------------------------------------------
+Sub QueryBuff(string Name, string Buff)
+	/declare HasBuff int local 0
+	/declare HasSong int local 0
+	/declare Result int local 0
+	/dquery ${Name} -q "Me.Buff[${Buff}].ID" -o HasBuff -t ${DanNetDelay}
+	/dquery ${Name} -q "Me.Song[${Buff}].ID" -o HasSong -t ${DanNetDelay}
+	/varcalc Result ${HasBuff} || ${HasSong}
+/return ${Result}
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: MaintainTargetBuffs
+|---------------------------------------------------------------------------------
+Sub MaintainTargetBuffs
+
+	/declare i int local
+	/declare j int local
+
+	/declare SpellToCast string local 0
+	/declare BuffIDName  string local 0
+
+	/for j 1 to ${NumberOfToons}
+		/if (${Spawn[=${MyBuffTargetName[${j}]}].ID} || (${Spawn[=${MyBuffTargetName[${j}]}].ID} && ${MyBuffTargetName[${j}].NotEqual[NULL]})) {
+			/if (${Debug}) /echo \ao Attempting to query \at (${MyBuffTargetName[${j}]}) \ao for \ag buff \ao check.
+
+		 |--------------------------------------------------------------------------------
+			 /for i 1 to ${NumberOfBuffs} 
+				|--------------------------------------------------------------------------------
+				|If spell name differs from buff name, use argument seperator to extract and set values. 
+					/if (${TargetBuffName[${i}].Arg[2,|].Length}) {
+						/varset SpellToCast ${TargetBuffName[${i}].Arg[1,|]}
+						/varset BuffIDName  ${TargetBuffName[${i}].Arg[2,|]}
+					} else {
+						/varset SpellToCast ${TargetBuffName[${i}]}
+						/varset BuffIDName  ${TargetBuffName[${i}]}
+					}   
+					/if ( ${SpellToCast.Equal[NULL]} ) /continue
+					
+					
+					/call QueryBuff "${MyBuffTargetName[${j}]}" "${BuffIDName}"
+					/if (!${Macro.Return}) {
+						/echo Buffing ${MyBuffTargetName[${j}]} with ${SpellToCast}
+						/call CastSpell ${Spawn[=${MyBuffTargetName[${j}]}].ID} "${SpellToCast}"
+					
+					}
+			/next i
+			|--------------------------------------------------------------------------------
+		}
+	/next j
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: QueryShouldAssist
+|---------------------------------------------------------------------------------
+Sub QueryShouldAssist(string Name, string BuffIDName)
+	/declare TargetHP int local
+	/declare TargetType string local
+	/declare TargetID int local
+	/declare InCombat string local
+	/declare AlreadyDebuffed int local
+
+	/dquery ${Name} -q "Target.PctHPs" -o TargetHP -t ${DanNetDelay}
+	/dquery ${Name} -q "Target.Type" -o TargetType -t ${DanNetDelay}
+	/dquery ${Name} -q "Target.ID" -o TargetID -t ${DanNetDelay}
+	/dquery ${Name} -q "Me.CombatState.Equal[COMBAT]" -o InCombat -t ${DanNetDelay}
+	/if (${SpamAssistSpell}) {
+		/varset AlreadyDebuffed 0
+	} else {
+		/dquery ${Name} -q "Target.Buff[${BuffIDName}].ID" -o AlreadyDebuffed -t ${DanNetDelay}
+	}
+    /if (${Select[${TargetType},NPC,PET]} && ${InCombat} && ${TargetHP} < ${AssistPct} && !${AlreadyDebuffed}) {
+		/return ${TargetID}
+	} else /return 0
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: AssistOnTarget
+|---------------------------------------------------------------------------------
+Sub AssistOnTarget
+	/declare SpellToCast string local 0
+	/declare BuffIDName string local 0
+
+	|If spell name differs from buff name, use argument seperator to extract and set values. 
+	/if (${AssistSpell.Arg[2,|].Length}) {
+		/varset SpellToCast ${AssistSpell.Arg[1,|]}
+		/varset BuffIDName  ${AssistSpell.Arg[2,|]}
+	} else {
+		/varset SpellToCast ${AssistSpell}
+		/varset BuffIDName  ${AssistSpell}
+	}   
+
+	/declare TargetID int local 0
+	/call QueryShouldAssist "${MyBuffTargetName[1]}" "${BuffIDName}"
+	/varset TargetID ${Macro.Return}
+	/if (${TargetID} > 0) {
+		/echo Attempting to assist, casting (${SpellToCast}) on (${Spawn[${TargetID}].CleanName}).
+		/call CastSpell ${TargetID} "${SpellToCast}"
+	}
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: CheckMana
+|---------------------------------------------------------------------------------
+Sub CheckMana
+	/if (${Select[${Me.Class.ShortName},BRD]}) /return
+	/echo Checking my Mana . . .
+	/if (${Me.PctMana}<${MinManaMedPct}) { 
+		 /echo I'm low on mana (${Me.PctMana}%), medding to (${MinManaMedPct}%).
+		 /if (${AutoAnnounce}) /tell ${MyBuffTargetName[1]} I'm low on mana, medding to full.      
+
+		 /if (${Me.Standing} && !${Me.Mount.ID}) /sit 
+
+		:KeepMeddingForMana
+		/if (!${Me.CombatState.Equal[COMBAT]} && (${Me.PctMana}<${MinManaMedPct})) {
+			/echo Mana now at (${Me.PctMana}%) ...
+			/if (${Me.AltAbilityReady[Cannibalization]}) /call Cast "Cannibalization" alt  	 	
+			/if (${HealsOn})  /call CheckMyHealth
+			/if (${HealsOn})  /call CheckTargetHealth
+			/if (${BuffsOn})  /call MaintainTargetBuffs 
+			/if (${FollowGroup}) /call FollowAround
+			/delay 6s
+			/doevents        
+			/if (${Me.Standing} && !${Me.Mount.ID}) /sit
+			/goto :KeepMeddingForMana
+		} else {
+			/if (${Me.Sitting} && !${Me.Mount.ID}) /stand
+		}
+		 
+		/echo Mana check done . . .
+		/if (${AutoAnnounce}) /tell ${MyBuffTargetName[1]} Done medding!
+	}
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: FollowAround
+|---------------------------------------------------------------------------------
+Sub FollowAround
+	/declare FollowID int local ${Spawn[=${MyBuffTargetName[1]}].ID}
+
+	/if (${AdminDebug}) {
+		 /echo \atFollowAround: (${FollowGroup}) FollowDIst: (${FollowDist})
+	}
+
+	/if (${Spawn[${FollowID}].Distance3D} > ${FollowDist}) {
+		/echo Moving closer to ${MyBuffTargetName[1]}
+		/squelch /nav id ${FollowID}
+		/delay 1
+
+
+		/while (${Spawn[${FollowID}].Distance3D} > ${FollowDist} && ${Navigation.Active}) {
+			 /delay 1
+		}
+		/nav stop
+	}
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: WaitSpellReady
+|---------------------------------------------------------------------------------
+Sub WaitSpellReady
+	/while ( !${Cast.Ready}) {
+		/delay 1
+	}
+/return
+|---------------------------------------------------------------------------------
+
+|---------------------------------------------------------------------------------
+| SUB: Event_SpellBlocked
+|---------------------------------------------------------------------------------
+Sub Event_SpellBlocked(string line, string MySPell, string BuffToon, string BlockingSPell)
+
+/if (${Defined[${BlockingSPell}]}) {
+    /echo Your ${MySPell} spell did not take hold on ${BuffToon} (Blocked by ${BlockingSPell}.)
+} else {
+    /echo Your ${MySPell} spell did not take hold on ${BuffToon} (Perhaps he/she is max buffed?)
+}
+/beep
+/echo You are wasting mana in a casting loop!
+    
+/return
+|---------------------------------------------------------------------------------
