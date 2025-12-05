@@ -154,6 +154,12 @@ Sub Main
 |---------------------------------------------------------------------------------
 
 	/message \atGood to Go !!!\ax \ar--\ax \ayStarting routines . . .\aw
+	|---------------------------
+	/for x 1 to ${NumberOfToons}
+		/e3bct ${MyBuffTargetName[${x}]} /popcustom 13 2 + Good to Go !!! -- Starting routines . . .
+	/next x	
+	/delay 2s		
+	|---------------------------
 	/message ==================================================================
 
 :loop 
