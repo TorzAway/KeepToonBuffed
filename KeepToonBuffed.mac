@@ -1,9 +1,9 @@
 |****************************************************************************************************************
 |   KeepToonBuffed - by Kroaking
 |   based on KeepToonBuffed.mac by Kroaking
-|   Last Updated: December 5th, 2025 - 02:46:00 PM
+|   Last Updated: December 5th, 2025 - 03:15:00 PM
 |
-|   v2.0.4
+|   v2.0.5
 |
 |   This macro is designed to allow an out of group PowerLeveling toon
 |   to be able to target members of a low level group, heal, 
@@ -30,7 +30,7 @@ Sub Main
 
 |==================== DO NOT ALTER THESE VALUES ====================
 /declare MacroName			string	outer	KeepToonBuffed
-/declare KeepToonBuffVer	string	outer	2.0.4
+/declare KeepToonBuffVer	string	outer	2.0.5
 /declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 /declare FirstRun			int		outer	0
 /declare x					int		outer	0
@@ -356,7 +356,8 @@ Sub CheckTargetHealth
 			/varset currentHealth ${Macro.Return}  
 
 			/if ((${currentHealth}<=${HealPct}) && (${Target.Distance}<=${HealSpellRange}) && ${Cast.Ready["${HealSpell}"]}) {
-				/message \am(\at${MyBuffTargetName[${j}]}'s\am)\aw health at \am(\ao${currentHealth}\am)\aw, -- \arHEAL TIME !!!\aw
+				/message \am(\at${MyBuffTargetName[${j}]}'s\am)\aw health at \am(\ao${currentHealth}\am)\aw, -- \arHEAL TIME !!!\aw				
+				/e3bct ${MyBuffTargetName[${j}]} /popcustom 14 2 + HEAL TIME !!!
 				/call CastSpell ${Spawn[${MyBuffTargetName[${j}]}].ID} "${HealSpell}"
 			}
 		}
@@ -409,7 +410,8 @@ Sub MaintainTargetBuffs
 					|--
 					/call QueryBuff "${MyBuffTargetName[${j}]}" "${BuffIDName}"	
 					/if (!${Macro.Return} && ${Cast.Ready["${SpellToCast}"]}) {										
-						/message \awBuffing \am(\at${MyBuffTargetName[${j}]}\am)\aw with \am(\ag${SpellToCast}\am)\aw. ${Cast.Ready["${SpellToCast}"]}
+						/message \awBuffing \am(\at${MyBuffTargetName[${j}]}\am)\aw with \am(\ag${SpellToCast}\am)\aw.
+						/e3bct ${MyBuffTargetName[${j}]} /popcustom 18 2 + Buffing: (${SpellToCast})
 						/call CastSpell ${Spawn[=${MyBuffTargetName[${j}]}].ID} "${SpellToCast}"
 					}
 			/next i
@@ -448,8 +450,9 @@ Sub QueryShouldAssist(string Name, string BuffIDName)
 | SUB: AssistOnTarget
 |---------------------------------------------------------------------------------
 Sub AssistOnTarget
-	/declare SpellToCast string local 0
-	/declare BuffIDName string local 0
+	/declare SpellToCast 	string 	local 0
+	/declare BuffIDName 	string 	local 0
+	/declare y				int 	local 0
 
 	|If spell name differs from buff name, use argument seperator to extract and set values. 
 	/if (${AssistSpell.Arg[2,|].Length}) {
@@ -465,6 +468,11 @@ Sub AssistOnTarget
 	/varset TargetID ${Macro.Return}
 	/if (${TargetID} > 0 && ${Cast.Ready["${SpellToCast}"]}) {
 		/message \awAttempting to assist, casting \am(\ay${SpellToCast}\am) \awon \am(\ar${Spawn[${TargetID}].CleanName}\am)\aw.
+		|---------------------------
+		/for y 1 to ${NumberOfToons}
+			/e3bct ${MyBuffTargetName[${y}]} /popcustom 15 2 + Casting (${SpellToCast}) on (${Spawn[${TargetID}].CleanName})
+		/next y		
+		|---------------------------
 		/call CastSpell ${TargetID} "${SpellToCast}"
 	}
 /return
@@ -518,8 +526,7 @@ Sub FollowAround
 		/message \awMoving closer to \am(\at${MyBuffTargetName[1]}\am)\ax.
 		/squelch /nav id ${FollowID}
 		/delay 1
-
-
+		
 		/while (${Spawn[${FollowID}].Distance3D} > ${FollowDist} && ${Navigation.Active}) {
 			 /delay 1
 		}
