@@ -16,6 +16,7 @@
 #Event SpellBlocked "#*#Your #1# spell did not take hold on #2#. (Blocked by #3#.)#*#"
 #Event SpellBlocked "#*#Your #1# spell did not take hold on #2#.#*#"
 
+#define /message "/echo \ay[\atKeepToonBuffed\ay]\aw "
 |---------------------------------------------------------------------------------
 Sub Main
 
@@ -26,14 +27,17 @@ Sub Main
 |---------------------------------------------------------------------------------
 
 |==================== DO NOT ALTER THESE VALUES ====================
-/declare MacroName		string	outer	KeepToonBuffed
-/declare KeepToonBuffVer	string	outer	2.0.1
+/declare MacroName			string	outer	KeepToonBuffed
+/declare KeepToonBuffVer	string	outer	2.0.3
 /declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 /declare FirstRun			int		outer	0
+
+|---------------------------------------
 /if ( !${Ini[${IniFileName}].Length} ) {
 	/call CreateIni
 	/varset FirstRun 1
 }
+|---------------------------------------
 
 | ################## Set up [General] values
 /call LoadIni General MacroVer				string	${KeepToonBuffVer}
@@ -41,7 +45,7 @@ Sub Main
 /call LoadIni General Debug					bool	FALSE
 /call LoadIni General AdminDebug			bool	FALSE
 /call LoadIni General DebugINI				bool	FALSE
-/call LoadIni General FollowGroup			int		0
+/call LoadIni General FollowGroup			bool	TRUE
 /call LoadIni General FollowDist			int		30
 /call LoadIni General DanNetDelay 			int 	20
 /declare MyMDist 							int 	outer	${FollowDist}-5
@@ -52,7 +56,7 @@ Sub Main
 /call LoadIni Mana MinManaMedPct			int		100
 
 | ################## Set up [Heal] values
-/call LoadIni Heal HealsOn					int		1
+/call LoadIni Heal HealsOn					bool	TRUE
 /call LoadIni Heal HealSpell				string	NULL
 /call LoadIni Heal HealPct					int		60
 /declare HealSpellRange 					int 	outer 	${Spell[${HealSpell}].Range}
@@ -63,48 +67,74 @@ Sub Main
 /call LoadIni Toons MyBuffTargetName		string	NULL	MyBuffTargetName
 
 | ################## Set up [Buffs] values
-/call LoadIni Buffs BuffsOn					int		1
+/call LoadIni Buffs BuffsOn					bool	TRUE
 /call LoadIni Buffs NumberOfBuffs			int		5
-/call LoadIni Buffs TargetBuffNameHelp 		string 	outer	"Name of Spell to Cast|Name of Buff Effect in Buff Window"
+/call LoadIni Buffs TargetBuffNameHelp 		string 	"Name of Spell to Cast|Name of Buff Effect in Buff Window"
 /declare TargetBuffName[${NumberOfBuffs}]	string	outer
 /call LoadIni Buffs TargetBuffName			string	NULL	TargetBuffName
 
 | ################## Set up [Assist] values
-/call LoadIni Assist AssistOn				int		0
-/call LoadIni Assist AssistSpellHelp 		string 	outer	"Name of Spell to Cast|Name of Buff Effect in Buff Window. Set SpamAssistSpell=1 if you want to continuously cast."
-/call LoadIni Assist AssistSpell			string	outer	"Ensnaring Roots"
+/call LoadIni Assist AssistOn				bool	TRUE
+/call LoadIni Assist AssistSpellHelp 		string 	"Name of Spell to Cast|Name of Buff Effect in Buff Window. Set SpamAssistSpell=1 if you want to continuously cast."
+/call LoadIni Assist AssistSpell			string	"Ensnaring Roots"
 /call LoadIni Assist AssistPct				int		60
-/call LoadIni Assist SpamAssistSpell		int 	0
-
+/call LoadIni Assist SpamAssistSpell		bool	FALSE
+	
+|------------------------------------------------------------	
 /if (${FirstRun}) {
-	/echo Created INI file ${IniFileName} with default values
-	/echo Please edit the file and restart
-	/echo Ending Macro
+	/message Created INI file ${IniFileName} with default values
+	/message Please edit the file and restart
+	/message Ending Macro
 	/end
 } else {
-	/echo Config loaded from ${IniFileName}
+	/message Config loaded from ${IniFileName}
 }
-
+|------------------------------------------------------------
 
 /call VersionControl
 /call CheckPlugin MQ2Cast
 /call CheckPlugin MQ2Nav
 /call CheckPlugin MQ2DanNet
+
+|--------------------------------------------------------------
 /if (${FollowGroup} && !${Navigation.MeshLoaded}) {
-	/echo No nav mesh loaded! You will need a mesh for this zone in order for follow to work
-	/echo Turning off FollowGroup
+	/message No nav mesh loaded! You will need a mesh for this zone in order for follow to work
+	/message Turning off FollowGroup
 	/varset FollowGroup 0
 }
+|--------------------------------------------------------------
 |==================== DO NOT ALTER THESE VALUES ====================
 
 |---------------------------------------------------------------------------------
-/echo KeepToonBuffed.mac - Version: ${MacroVer} by tweeb
-/echo Original macro by TreeHuginDruid (RIP)
-|---------------------------------------------------------------------------------
+
+	/message ==================================================================
+	/message \ao${Macro}\ax - Version: \at${MacroVer}\ax by \agKroaking\ax
+	/message \arOriginal macro by TreeHuginDruid (RIP)\ax
+	/message ==================================================================
+	/message \ag- FollowGroup \ayis set to \at[\ag${FollowGroup}\at]\ax
+	/message \ag- FollowDist \ayis set to \at[\ag${FollowDist}\at]\ax
+	/message \at----------------------------------------------------------------\ax
+	/message \ag- SpellSetName \ayis set to \at[\ag${SpellSetName}\at]\ax
+	/message \ag- HealsOn \ayis set to \at[\ag${HealsOn}\at]\ax
+	/message \ag- HealPct \ayis set to \at[\ag${HealPct}\at]\ax
+	/message \ag- HealSpell \ayis set to \at[\ag${HealSpell}\at]\ax
+	/message \ag- HealSpellRange \ayis set to \at[\ag${HealSpellRange}\at]\ax
+	/message \at----------------------------------------------------------------\ax
+	/message \ag- NumberOfToons \ayis set to \at[\ag${NumberOfToons}\at]\ax
+	/message \ar- DISPLAY TOONS BEING BUFFED HERE
+	/message \ag- BuffsOn \ayis set to \at[\ag${BuffsOn}\at]\ax
+	/message \ag- NumberOfBuffs \ayis set to \at[\ag${NumberOfBuffs}\at]\ax
+	/message \ar- DISPLAY BUFFS BEING USED HERE
+	/message \at----------------------------------------------------------------\ax
+	/message \ag- AssistOn \ayis set to \at[\ag${AssistOn}\at]\ax
+	/message \ag- AssistPct \ayis set to \at[\ag${AssistPct}\at]\ax
+	/message \ag- AssistSpell \ayis set to \at[\ag${AssistSpell}\at]\ax
+	/message \ag- SpamAssistSpell \ayis set to \at[\ag${SpamAssistSpell}\at]\ax	
+	/message ==================================================================
 
 |---------------------------------------------------------------------------------
 /if (${Defined[SpellSetName]} && ${SpellSetName.NotEqual[NULL]}) {
-    /echo Memming spellset (${SpellSetName}).
+    /message Memming spellset (${SpellSetName}).
     /memspellset ${SpellSetName}
     /delay 5s
 }   
@@ -132,9 +162,9 @@ Sub Main
 |---------------------------------------------------------------------------------
 Sub VersionControl
 	/if (${MacroVer.NotEqual[${KeepToonBuffVer}]}) {
-		/echo Version mismatch detected, please wait until this is corrected.
+		/message Version mismatch detected, please wait until this is corrected.
 		/ini "${IniFileName}" "General" "MacroVer" "${KeepToonBuffVer}"
-		/echo Version information updated.
+		/message Version information updated.
 		/call LoadIni General MacroVer	string	${KeepToonBuffVer}
 	}
 /return
@@ -147,7 +177,7 @@ Sub CheckPlugin(string pluginname)
 
 /if (!${Bool[${Plugin[${pluginname}]}]}) {
     /squelch /plugin ${pluginname}
-    /echo ${pluginname} not detected! This macro requires it! Loading ...
+    /message ${pluginname} not detected! This macro requires it! Loading ...
 }
     
 /return
@@ -158,9 +188,9 @@ Sub CheckPlugin(string pluginname)
 |---------------------------------------------------------------------------------
 Sub CreateIni
 	/if (${Ini[${IniFileName}].Length}) /return
-	/declare a local General|Mana|Heal|Toons|Buffs|
+	/declare a local General|Mana|Heal|Toons|Buffs|Assist
 	/declare i int local 1
-	/for i 1 to 5
+	/for i 1 to 6
 	/ini ${IniFileName} "${a.Arg[${i},|]}" "|===================================" "==================================|"
 	/next i
 
@@ -257,10 +287,10 @@ Sub CheckMyHealth
 
 /if (${Me.PctHPs}<=${HealPct}) {
     /if (${Target.ID}!=${Me.ID}) {
-         /if (${Debug}) /echo Attempting to target (${Me.CleanName}) for heals!
+         /if (${Debug}) /message Attempting to target (${Me.CleanName}) for heals!
          /squelch /target id ${Me.ID} pc targetable
          /delay 15 !${Target.ID}   
-		 /echo My health is ${Me.PctHPs}, healing myself with ${HealSpell}
+		 /message My health is ${Me.PctHPs}, healing myself with ${HealSpell}
          /casting "${HealSpell}" gem8
          /call WaitSpellReady
     }
@@ -274,7 +304,7 @@ Sub CheckMyHealth
 |---------------------------------------------------------------------------------
 Sub CastSpell(int SpellTarget, string SpellToCast)
 	/if (${AdminDebug}) {
-		/echo CastSpell called with ${SpellTarget}, ${SpellToCast}
+		/message CastSpell called with ${SpellTarget}, ${SpellToCast}
 	}
 	/squelch /target id ${SpellTarget}
 	/delay 10 ${Target.ID}==${SpellTarget}
@@ -305,12 +335,12 @@ Sub CheckTargetHealth
 
 	/for j 1 to ${NumberOfToons}
 		/if (${Spawn[=${MyBuffTargetName[${j}]}].ID} || (${Spawn[=${MyBuffTargetName[${j}]}].ID} && ${MyBuffTargetName[${j}].NotEqual[NULL]})) {
-			/if (${Debug}) /echo \ao Attempting to query \at (${MyBuffTargetName[${j}]}) \ao for \ar health \ao check.
+			/if (${Debug}) /message \ao Attempting to query \at (${MyBuffTargetName[${j}]}) \ao for \ar health \ao check.
 			/call QueryHealth ${MyBuffTargetName[${j}]}
 			/varset currentHealth ${Macro.Return}  
 
 			/if ((${currentHealth}<=${HealPct}) && (${Target.Distance}<=${HealSpellRange})) {
-				/echo ${MyBuffTargetName[${j}]}'s health at (${currentHealth}), HEAL TIME !!!!
+				/message ${MyBuffTargetName[${j}]}'s health at (${currentHealth}), HEAL TIME !!!!
 				/call CastSpell ${Spawn[${MyBuffTargetName[${j}]}].ID} "${HealSpell}"
 			}
 		}
@@ -345,7 +375,7 @@ Sub MaintainTargetBuffs
 
 	/for j 1 to ${NumberOfToons}
 		/if (${Spawn[=${MyBuffTargetName[${j}]}].ID} || (${Spawn[=${MyBuffTargetName[${j}]}].ID} && ${MyBuffTargetName[${j}].NotEqual[NULL]})) {
-			/if (${Debug}) /echo \ao Attempting to query \at (${MyBuffTargetName[${j}]}) \ao for \ag buff \ao check.
+			/if (${Debug}) /message \ao Attempting to query \at (${MyBuffTargetName[${j}]}) \ao for \ag buff \ao check.
 
 		 |--------------------------------------------------------------------------------
 			 /for i 1 to ${NumberOfBuffs} 
@@ -363,7 +393,7 @@ Sub MaintainTargetBuffs
 					
 					/call QueryBuff "${MyBuffTargetName[${j}]}" "${BuffIDName}"
 					/if (!${Macro.Return}) {
-						/echo Buffing ${MyBuffTargetName[${j}]} with ${SpellToCast}
+						/message Buffing ${MyBuffTargetName[${j}]} with ${SpellToCast}
 						/call CastSpell ${Spawn[=${MyBuffTargetName[${j}]}].ID} "${SpellToCast}"
 					
 					}
@@ -419,7 +449,7 @@ Sub AssistOnTarget
 	/call QueryShouldAssist "${MyBuffTargetName[1]}" "${BuffIDName}"
 	/varset TargetID ${Macro.Return}
 	/if (${TargetID} > 0) {
-		/echo Attempting to assist, casting (${SpellToCast}) on (${Spawn[${TargetID}].CleanName}).
+		/message Attempting to assist, casting (${SpellToCast}) on (${Spawn[${TargetID}].CleanName}).
 		/call CastSpell ${TargetID} "${SpellToCast}"
 	}
 /return
@@ -430,16 +460,16 @@ Sub AssistOnTarget
 |---------------------------------------------------------------------------------
 Sub CheckMana
 	/if (${Select[${Me.Class.ShortName},BRD]}) /return
-	/echo Checking my Mana . . .
+	/message Checking my Mana . . .
 	/if (${Me.PctMana}<${MinManaMedPct}) { 
-		 /echo I'm low on mana (${Me.PctMana}%), medding to (${MinManaMedPct}%).
+		 /message I'm low on mana (${Me.PctMana}%), medding to (${MinManaMedPct}%).
 		 /if (${AutoAnnounce}) /tell ${MyBuffTargetName[1]} I'm low on mana, medding to full.      
 
 		 /if (${Me.Standing} && !${Me.Mount.ID}) /sit 
 
 		:KeepMeddingForMana
 		/if (!${Me.CombatState.Equal[COMBAT]} && (${Me.PctMana}<${MinManaMedPct})) {
-			/echo Mana now at (${Me.PctMana}%) ...
+			/message Mana now at (${Me.PctMana}%) ...
 			/if (${Me.AltAbilityReady[Cannibalization]}) /call Cast "Cannibalization" alt  	 	
 			/if (${HealsOn})  /call CheckMyHealth
 			/if (${HealsOn})  /call CheckTargetHealth
@@ -453,7 +483,7 @@ Sub CheckMana
 			/if (${Me.Sitting} && !${Me.Mount.ID}) /stand
 		}
 		 
-		/echo Mana check done . . .
+		/message Mana check done . . .
 		/if (${AutoAnnounce}) /tell ${MyBuffTargetName[1]} Done medding!
 	}
 /return
@@ -466,11 +496,11 @@ Sub FollowAround
 	/declare FollowID int local ${Spawn[=${MyBuffTargetName[1]}].ID}
 
 	/if (${AdminDebug}) {
-		 /echo \atFollowAround: (${FollowGroup}) FollowDIst: (${FollowDist})
+		 /message \atFollowAround: (${FollowGroup}) FollowDIst: (${FollowDist})
 	}
 
 	/if (${Spawn[${FollowID}].Distance3D} > ${FollowDist}) {
-		/echo Moving closer to ${MyBuffTargetName[1]}
+		/message Moving closer to ${MyBuffTargetName[1]}
 		/squelch /nav id ${FollowID}
 		/delay 1
 
@@ -499,12 +529,12 @@ Sub WaitSpellReady
 Sub Event_SpellBlocked(string line, string MySPell, string BuffToon, string BlockingSPell)
 
 /if (${Defined[${BlockingSPell}]}) {
-    /echo Your ${MySPell} spell did not take hold on ${BuffToon} (Blocked by ${BlockingSPell}.)
+    /message Your ${MySPell} spell did not take hold on ${BuffToon} (Blocked by ${BlockingSPell}.)
 } else {
-    /echo Your ${MySPell} spell did not take hold on ${BuffToon} (Perhaps he/she is max buffed?)
+    /message Your ${MySPell} spell did not take hold on ${BuffToon} (Perhaps he/she is max buffed?)
 }
 /beep
-/echo You are wasting mana in a casting loop!
+/message You are wasting mana in a casting loop!
     
 /return
 |---------------------------------------------------------------------------------
