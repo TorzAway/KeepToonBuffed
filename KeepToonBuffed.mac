@@ -345,7 +345,7 @@ Sub CheckTargetHealth
 			/call QueryHealth ${MyBuffTargetName[${j}]}
 			/varset currentHealth ${Macro.Return}  
 
-			/if ((${currentHealth}<=${HealPct}) && (${Target.Distance}<=${HealSpellRange})) {
+			/if ((${currentHealth}<=${HealPct}) && (${Target.Distance}<=${HealSpellRange}) && ${Cast.Ready["${HealSpell}"]}) {
 				/message \am(\at${MyBuffTargetName[${j}]}'s\am)\aw health at \am(\ao${currentHealth}\am)\aw, -- \arHEAL TIME !!!\aw
 				/call CastSpell ${Spawn[${MyBuffTargetName[${j}]}].ID} "${HealSpell}"
 			}
@@ -397,11 +397,10 @@ Sub MaintainTargetBuffs
 					|--
 					/if (${SpellToCast.Equal[NULL]}) /continue										
 					|--
-					/call QueryBuff "${MyBuffTargetName[${j}]}" "${BuffIDName}"
-					/if (!${Macro.Return}) {
-						/message \awBuffing \am(\at${MyBuffTargetName[${j}]}\am)\aw with \am(\ag${SpellToCast}\am)\aw.
+					/call QueryBuff "${MyBuffTargetName[${j}]}" "${BuffIDName}"	
+					/if (!${Macro.Return} && ${Cast.Ready["${SpellToCast}"]}) {										
+						/message \awBuffing \am(\at${MyBuffTargetName[${j}]}\am)\aw with \am(\ag${SpellToCast}\am)\aw. ${Cast.Ready["${SpellToCast}"]}
 						/call CastSpell ${Spawn[=${MyBuffTargetName[${j}]}].ID} "${SpellToCast}"
-					
 					}
 			/next i
 			|--------------------------------------------------------------------------------
@@ -454,7 +453,7 @@ Sub AssistOnTarget
 	/declare TargetID int local 0
 	/call QueryShouldAssist "${MyBuffTargetName[1]}" "${BuffIDName}"
 	/varset TargetID ${Macro.Return}
-	/if (${TargetID} > 0) {
+	/if (${TargetID} > 0 && ${Cast.Ready["${SpellToCast}"]}) {
 		/message \awAttempting to assist, casting \am(\ay${SpellToCast}\am) \awon \am(\ar${Spawn[${TargetID}].CleanName}\am)\aw.
 		/call CastSpell ${TargetID} "${SpellToCast}"
 	}
