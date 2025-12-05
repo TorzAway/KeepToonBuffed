@@ -82,12 +82,12 @@ Sub Main
 	
 |------------------------------------------------------------	
 /if (${FirstRun}) {
-	/message Created INI file ${IniFileName} with default values
-	/message Please edit the file and restart
-	/message Ending Macro
+	/message Created INI file ${IniFileName} with default values.
+	/message Please edit the file and restart.
+	/message Ending Macro.
 	/end
 } else {
-	/message Config loaded from ${IniFileName}
+	/message Config loaded from ${IniFileName}.
 }
 |------------------------------------------------------------
 
@@ -98,8 +98,8 @@ Sub Main
 
 |--------------------------------------------------------------
 /if (${FollowGroup} && !${Navigation.MeshLoaded}) {
-	/message No nav mesh loaded! You will need a mesh for this zone in order for follow to work
-	/message Turning off FollowGroup
+	/message No nav mesh loaded! You will need a mesh for this zone in order for follow to work.
+	/message Turning off FollowGroup.
 	/varset FollowGroup 0
 }
 |--------------------------------------------------------------
@@ -290,7 +290,7 @@ Sub CheckMyHealth
          /if (${Debug}) /message Attempting to target (${Me.CleanName}) for heals!
          /squelch /target id ${Me.ID} pc targetable
          /delay 15 !${Target.ID}   
-		 /message My health is ${Me.PctHPs}, healing myself with ${HealSpell}
+		 /message My health is ${Me.PctHPs}, healing myself with (${HealSpell}).
          /casting "${HealSpell}" gem8
          /call WaitSpellReady
     }
@@ -304,7 +304,7 @@ Sub CheckMyHealth
 |---------------------------------------------------------------------------------
 Sub CastSpell(int SpellTarget, string SpellToCast)
 	/if (${AdminDebug}) {
-		/message CastSpell called with ${SpellTarget}, ${SpellToCast}
+		/message CastSpell called with ${SpellTarget}, ${SpellToCast}.
 	}
 	/squelch /target id ${SpellTarget}
 	/delay 10 ${Target.ID}==${SpellTarget}
@@ -393,7 +393,7 @@ Sub MaintainTargetBuffs
 					
 					/call QueryBuff "${MyBuffTargetName[${j}]}" "${BuffIDName}"
 					/if (!${Macro.Return}) {
-						/message Buffing ${MyBuffTargetName[${j}]} with ${SpellToCast}
+						/message Buffing ${MyBuffTargetName[${j}]} with (${SpellToCast}).
 						/call CastSpell ${Spawn[=${MyBuffTargetName[${j}]}].ID} "${SpellToCast}"
 					
 					}
@@ -496,11 +496,11 @@ Sub FollowAround
 	/declare FollowID int local ${Spawn[=${MyBuffTargetName[1]}].ID}
 
 	/if (${AdminDebug}) {
-		 /message \atFollowAround: (${FollowGroup}) FollowDIst: (${FollowDist})
+		 /message \atFollowAround: (${FollowGroup}) FollowDIst: (${FollowDist}).
 	}
 
 	/if (${Spawn[${FollowID}].Distance3D} > ${FollowDist}) {
-		/message Moving closer to ${MyBuffTargetName[1]}
+		/message Moving closer to (${MyBuffTargetName[1]}).
 		/squelch /nav id ${FollowID}
 		/delay 1
 
@@ -529,9 +529,9 @@ Sub WaitSpellReady
 Sub Event_SpellBlocked(string line, string MySPell, string BuffToon, string BlockingSPell)
 
 /if (${Defined[${BlockingSPell}]}) {
-    /message Your ${MySPell} spell did not take hold on ${BuffToon} (Blocked by ${BlockingSPell}.)
+    /message Your ${MySPell} spell did not take hold on ${BuffToon} (Blocked by ${BlockingSPell}).
 } else {
-    /message Your ${MySPell} spell did not take hold on ${BuffToon} (Perhaps he/she is max buffed?)
+    /message Your ${MySPell} spell did not take hold on ${BuffToon} (Perhaps he/she is max buffed?).
 }
 /beep
 /message You are wasting mana in a casting loop!
