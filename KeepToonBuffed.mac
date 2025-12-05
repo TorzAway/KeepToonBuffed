@@ -1,7 +1,7 @@
 |****************************************************************************************************************
 |   KeepToonBuffed - by Kroaking
 |   based on KeepToonBuffed.mac by Kroaking
-|   Last Updated: December 5th, 2025 - 01:38:00 PM
+|   Last Updated: December 5th, 2025 - 02:46:00 PM
 |
 |   v2.0.4
 |
@@ -33,6 +33,7 @@ Sub Main
 /declare KeepToonBuffVer	string	outer	2.0.4
 /declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 /declare FirstRun			int		outer	0
+/declare x					int		outer	0
 
 |---------------------------------------
 /if ( !${Ini[${IniFileName}].Length} ) {
@@ -123,10 +124,19 @@ Sub Main
 	/message \ag- HealSpellRange \ayis set to \at[\ag${HealSpellRange}\at]\aw
 	/message \at----------------------------------------------------------------\aw
 	/message \ag- NumberOfToons \ayis set to \at[\ag${NumberOfToons}\at]\aw
-	/message \ar- DISPLAY TOONS BEING BUFFED HERE\aw
+	|------------------------------
+	/for x 1 to ${NumberOfToons}
+		/message \ag- MyBuffTargetName\at${x}\ay\ao: is \at[\ag${MyBuffTargetName[${x}]}\at]\aw
+	/next x
+	|------------------------------
+	/message \at----------------------------------------------------------------\aw	
 	/message \ag- BuffsOn \ayis set to \at[\ag${BuffsOn}\at]\aw
 	/message \ag- NumberOfBuffs \ayis set to \at[\ag${NumberOfBuffs}\at]\aw
-	/message \ar- DISPLAY BUFFS BEING USED HERE\aw
+	|------------------------------
+	/for x 1 to ${NumberOfBuffs}
+		/message \ag- TargetBuffName\at${x}\ay\ao: is \at[\ag${TargetBuffName[${x}]}\at]\aw
+	/next x
+	|------------------------------
 	/message \at----------------------------------------------------------------\aw
 	/message \ag- AssistOn \ayis set to \at[\ag${AssistOn}\at]\aw
 	/message \ag- AssistPct \ayis set to \at[\ag${AssistPct}\at]\aw
