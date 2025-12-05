@@ -1,7 +1,10 @@
-|---------------------------------------------------------------------------------
+|****************************************************************************************************************
+|   KeepToonBuffed - by Kroaking
+|   based on KeepToonBuffed.mac by Kroaking
+|   Last Updated: December 5th, 2025 - 01:38:00 PM
 |
-|  KeepToonBuffed
-|  based on KeepToonBuffed.mac by Kroaking
+|   v2.0.4
+|
 |   This macro is designed to allow an out of group PowerLeveling toon
 |   to be able to target members of a low level group, heal, 
 |   and maintain buffs on them.
@@ -9,8 +12,7 @@
 |  --- Credit goes out to Maskoi as well, for providing the CreateIni and LoadInI code -
 |  --- (Ripped from ShamBot)
 |
-|---------------------------------------------------------------------------------
-
+****************************************************************************************************************|
 #turbo 80
 
 #Event SpellBlocked "#*#Your #1# spell did not take hold on #2#. (Blocked by #3#.)#*#"
@@ -28,7 +30,7 @@ Sub Main
 
 |==================== DO NOT ALTER THESE VALUES ====================
 /declare MacroName			string	outer	KeepToonBuffed
-/declare KeepToonBuffVer	string	outer	2.0.3
+/declare KeepToonBuffVer	string	outer	2.0.4
 /declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 /declare FirstRun			int		outer	0
 
@@ -108,37 +110,41 @@ Sub Main
 |---------------------------------------------------------------------------------
 
 	/message ==================================================================
-	/message \ao${Macro}\ax - Version: \at${MacroVer}\ax by \agKroaking\ax
-	/message \arOriginal macro by TreeHuginDruid (RIP)\ax
+	/message \ao${Macro}\ax - Version: \at${MacroVer}\ax by \agKroaking\aw
+	/message \arOriginal macro by TreeHuginDruid (RIP)\aw
 	/message ==================================================================
-	/message \ag- FollowGroup \ayis set to \at[\ag${FollowGroup}\at]\ax
-	/message \ag- FollowDist \ayis set to \at[\ag${FollowDist}\at]\ax
-	/message \at----------------------------------------------------------------\ax
-	/message \ag- SpellSetName \ayis set to \at[\ag${SpellSetName}\at]\ax
-	/message \ag- HealsOn \ayis set to \at[\ag${HealsOn}\at]\ax
-	/message \ag- HealPct \ayis set to \at[\ag${HealPct}\at]\ax
-	/message \ag- HealSpell \ayis set to \at[\ag${HealSpell}\at]\ax
-	/message \ag- HealSpellRange \ayis set to \at[\ag${HealSpellRange}\at]\ax
-	/message \at----------------------------------------------------------------\ax
-	/message \ag- NumberOfToons \ayis set to \at[\ag${NumberOfToons}\at]\ax
-	/message \ar- DISPLAY TOONS BEING BUFFED HERE
-	/message \ag- BuffsOn \ayis set to \at[\ag${BuffsOn}\at]\ax
-	/message \ag- NumberOfBuffs \ayis set to \at[\ag${NumberOfBuffs}\at]\ax
-	/message \ar- DISPLAY BUFFS BEING USED HERE
-	/message \at----------------------------------------------------------------\ax
-	/message \ag- AssistOn \ayis set to \at[\ag${AssistOn}\at]\ax
-	/message \ag- AssistPct \ayis set to \at[\ag${AssistPct}\at]\ax
-	/message \ag- AssistSpell \ayis set to \at[\ag${AssistSpell}\at]\ax
-	/message \ag- SpamAssistSpell \ayis set to \at[\ag${SpamAssistSpell}\at]\ax	
+	/message \ag- FollowGroup \ayis set to \at[\ag${FollowGroup}\at]\aw
+	/message \ag- FollowDist \ayis set to \at[\ag${FollowDist}\at]\aw
+	/message \at----------------------------------------------------------------\aw
+	/message \ag- SpellSetName \ayis set to \at[\ag${SpellSetName}\at]\aw
+	/message \ag- HealsOn \ayis set to \at[\ag${HealsOn}\at]\aw
+	/message \ag- HealPct \ayis set to \at[\ag${HealPct}\at]\aw
+	/message \ag- HealSpell \ayis set to \at[\ag${HealSpell}\at]\aw
+	/message \ag- HealSpellRange \ayis set to \at[\ag${HealSpellRange}\at]\aw
+	/message \at----------------------------------------------------------------\aw
+	/message \ag- NumberOfToons \ayis set to \at[\ag${NumberOfToons}\at]\aw
+	/message \ar- DISPLAY TOONS BEING BUFFED HERE\aw
+	/message \ag- BuffsOn \ayis set to \at[\ag${BuffsOn}\at]\aw
+	/message \ag- NumberOfBuffs \ayis set to \at[\ag${NumberOfBuffs}\at]\aw
+	/message \ar- DISPLAY BUFFS BEING USED HERE\aw
+	/message \at----------------------------------------------------------------\aw
+	/message \ag- AssistOn \ayis set to \at[\ag${AssistOn}\at]\aw
+	/message \ag- AssistPct \ayis set to \at[\ag${AssistPct}\at]\aw
+	/message \ag- AssistSpell \ayis set to \at[\ag${AssistSpell}\at]\aw
+	/message \ag- SpamAssistSpell \ayis set to \at[\ag${SpamAssistSpell}\at]\aw
 	/message ==================================================================
 
 |---------------------------------------------------------------------------------
 /if (${Defined[SpellSetName]} && ${SpellSetName.NotEqual[NULL]}) {
-    /message Memming spellset (${SpellSetName}).
+    /message \awMemming spellset \am(\at${SpellSetName}\am)\aw.
+	/message ==================================================================
     /memspellset ${SpellSetName}
     /delay 5s
 }   
 |---------------------------------------------------------------------------------
+
+	/message \atGood to Go !!!\ax \ar--\ax \ayStarting routines . . .\aw
+	/message ==================================================================
 
 :loop 
 
@@ -162,9 +168,9 @@ Sub Main
 |---------------------------------------------------------------------------------
 Sub VersionControl
 	/if (${MacroVer.NotEqual[${KeepToonBuffVer}]}) {
-		/message Version mismatch detected, please wait until this is corrected.
+		/message \aoVersion mismatch detected, please wait until this is corrected.
 		/ini "${IniFileName}" "General" "MacroVer" "${KeepToonBuffVer}"
-		/message Version information updated.
+		/message \agVersion information updated.
 		/call LoadIni General MacroVer	string	${KeepToonBuffVer}
 	}
 /return
@@ -177,7 +183,7 @@ Sub CheckPlugin(string pluginname)
 
 /if (!${Bool[${Plugin[${pluginname}]}]}) {
     /squelch /plugin ${pluginname}
-    /message ${pluginname} not detected! This macro requires it! Loading ...
+    /message \am(\ao${pluginname}\am)\aw plugin not detected! This macro requires it! \agLoading ...\aw
 }
     
 /return
@@ -287,10 +293,10 @@ Sub CheckMyHealth
 
 /if (${Me.PctHPs}<=${HealPct}) {
     /if (${Target.ID}!=${Me.ID}) {
-         /if (${Debug}) /message Attempting to target (${Me.CleanName}) for heals!
+         /if (${Debug}) /message \awAttempting to target \am(\at${Me.CleanName}\am)\aw for heals!
          /squelch /target id ${Me.ID} pc targetable
          /delay 15 !${Target.ID}   
-		 /message My health is ${Me.PctHPs}, healing myself with (${HealSpell}).
+		 /message \awMy health is \am(\ao${Me.PctHPs}\am)\aw, healing myself with \am(\at${HealSpell}\am)\aw.
          /casting "${HealSpell}" gem8
          /call WaitSpellReady
     }
@@ -304,7 +310,7 @@ Sub CheckMyHealth
 |---------------------------------------------------------------------------------
 Sub CastSpell(int SpellTarget, string SpellToCast)
 	/if (${AdminDebug}) {
-		/message CastSpell called with ${SpellTarget}, ${SpellToCast}.
+		/message \awCastSpell called with \am(\ay${SpellTarget}\ao, \ay${SpellToCast}\am)\aw
 	}
 	/squelch /target id ${SpellTarget}
 	/delay 10 ${Target.ID}==${SpellTarget}
@@ -335,12 +341,12 @@ Sub CheckTargetHealth
 
 	/for j 1 to ${NumberOfToons}
 		/if (${Spawn[=${MyBuffTargetName[${j}]}].ID} || (${Spawn[=${MyBuffTargetName[${j}]}].ID} && ${MyBuffTargetName[${j}].NotEqual[NULL]})) {
-			/if (${Debug}) /message \ao Attempting to query \at (${MyBuffTargetName[${j}]}) \ao for \ar health \ao check.
+			/if (${Debug}) /message \aoAttempting to query \at \am(\at${MyBuffTargetName[${j}]}\am) \ao for \ag health \ao check.
 			/call QueryHealth ${MyBuffTargetName[${j}]}
 			/varset currentHealth ${Macro.Return}  
 
 			/if ((${currentHealth}<=${HealPct}) && (${Target.Distance}<=${HealSpellRange})) {
-				/message ${MyBuffTargetName[${j}]}'s health at (${currentHealth}), HEAL TIME !!!!
+				/message \am(\at${MyBuffTargetName[${j}]}'s\am)\aw health at \am(\ao${currentHealth}\am)\aw, -- \arHEAL TIME !!!\aw
 				/call CastSpell ${Spawn[${MyBuffTargetName[${j}]}].ID} "${HealSpell}"
 			}
 		}
@@ -375,7 +381,7 @@ Sub MaintainTargetBuffs
 
 	/for j 1 to ${NumberOfToons}
 		/if (${Spawn[=${MyBuffTargetName[${j}]}].ID} || (${Spawn[=${MyBuffTargetName[${j}]}].ID} && ${MyBuffTargetName[${j}].NotEqual[NULL]})) {
-			/if (${Debug}) /message \ao Attempting to query \at (${MyBuffTargetName[${j}]}) \ao for \ag buff \ao check.
+			/if (${Debug}) /message \aoAttempting to query \at \am(\at${MyBuffTargetName[${j}]}\am) \ao for \ag buff \ao check.
 
 		 |--------------------------------------------------------------------------------
 			 /for i 1 to ${NumberOfBuffs} 
@@ -387,13 +393,13 @@ Sub MaintainTargetBuffs
 					} else {
 						/varset SpellToCast ${TargetBuffName[${i}]}
 						/varset BuffIDName  ${TargetBuffName[${i}]}
-					}   
-					/if ( ${SpellToCast.Equal[NULL]} ) /continue
-					
-					
+					}
+					|--
+					/if (${SpellToCast.Equal[NULL]}) /continue										
+					|--
 					/call QueryBuff "${MyBuffTargetName[${j}]}" "${BuffIDName}"
 					/if (!${Macro.Return}) {
-						/message Buffing ${MyBuffTargetName[${j}]} with (${SpellToCast}).
+						/message \awBuffing \am(\at${MyBuffTargetName[${j}]}\am)\aw with \am(\ag${SpellToCast}\am)\aw.
 						/call CastSpell ${Spawn[=${MyBuffTargetName[${j}]}].ID} "${SpellToCast}"
 					
 					}
@@ -449,7 +455,7 @@ Sub AssistOnTarget
 	/call QueryShouldAssist "${MyBuffTargetName[1]}" "${BuffIDName}"
 	/varset TargetID ${Macro.Return}
 	/if (${TargetID} > 0) {
-		/message Attempting to assist, casting (${SpellToCast}) on (${Spawn[${TargetID}].CleanName}).
+		/message \awAttempting to assist, casting \am(\ay${SpellToCast}\am) \awon \am(\ar${Spawn[${TargetID}].CleanName}\am)\aw.
 		/call CastSpell ${TargetID} "${SpellToCast}"
 	}
 /return
@@ -460,16 +466,16 @@ Sub AssistOnTarget
 |---------------------------------------------------------------------------------
 Sub CheckMana
 	/if (${Select[${Me.Class.ShortName},BRD]}) /return
-	/message Checking my Mana . . .
+	/message \awChecking my Mana . . .
 	/if (${Me.PctMana}<${MinManaMedPct}) { 
-		 /message I'm low on mana (${Me.PctMana}%), medding to (${MinManaMedPct}%).
+		 /message \ayI'm low on mana \am(\at${Me.PctMana}%\am)\ay, medding to \am(\at${MinManaMedPct}%\am)\ay.
 		 /if (${AutoAnnounce}) /tell ${MyBuffTargetName[1]} I'm low on mana, medding to full.      
 
 		 /if (${Me.Standing} && !${Me.Mount.ID}) /sit 
 
 		:KeepMeddingForMana
 		/if (!${Me.CombatState.Equal[COMBAT]} && (${Me.PctMana}<${MinManaMedPct})) {
-			/message Mana now at (${Me.PctMana}%) ...
+			/message \ayMana now at \am(\at${Me.PctMana}%\am)\ay ...
 			/if (${Me.AltAbilityReady[Cannibalization]}) /call Cast "Cannibalization" alt  	 	
 			/if (${HealsOn})  /call CheckMyHealth
 			/if (${HealsOn})  /call CheckTargetHealth
@@ -483,7 +489,7 @@ Sub CheckMana
 			/if (${Me.Sitting} && !${Me.Mount.ID}) /stand
 		}
 		 
-		/message Mana check done . . .
+		/message \awMana check done . . .
 		/if (${AutoAnnounce}) /tell ${MyBuffTargetName[1]} Done medding!
 	}
 /return
@@ -496,11 +502,11 @@ Sub FollowAround
 	/declare FollowID int local ${Spawn[=${MyBuffTargetName[1]}].ID}
 
 	/if (${AdminDebug}) {
-		 /message \atFollowAround: (${FollowGroup}) FollowDIst: (${FollowDist}).
+		 /message \awFollowAround\ao: \am(\at${FollowGroup}\am) \awFollowDIst\ao: \am(\at${FollowDist}\am)\aw.
 	}
 
 	/if (${Spawn[${FollowID}].Distance3D} > ${FollowDist}) {
-		/message Moving closer to (${MyBuffTargetName[1]}).
+		/message \awMoving closer to \am(\at${MyBuffTargetName[1]}\am)\ax.
 		/squelch /nav id ${FollowID}
 		/delay 1
 
@@ -529,9 +535,9 @@ Sub WaitSpellReady
 Sub Event_SpellBlocked(string line, string MySPell, string BuffToon, string BlockingSPell)
 
 /if (${Defined[${BlockingSPell}]}) {
-    /message Your ${MySPell} spell did not take hold on ${BuffToon} (Blocked by ${BlockingSPell}).
+    /message \awYour \ar(\at${MySPell}\ar)\aw spell did not take hold on \am(\at${BuffToon}\am) (\awBlocked by \ar${BlockingSPell}\am)\aw.
 } else {
-    /message Your ${MySPell} spell did not take hold on ${BuffToon} (Perhaps he/she is max buffed?).
+    /message \awYour \ar(\at${MySPell}\ar)\aw spell did not take hold on \am(\at${BuffToon}\am) (\awPerhaps he/she is max buffed?\am)\aw.
 }
 /beep
 /message You are wasting mana in a casting loop!
