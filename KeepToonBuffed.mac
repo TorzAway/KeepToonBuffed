@@ -1,9 +1,9 @@
 |****************************************************************************************************************
 |   KeepToonBuffed - by Kroaking
 |   based on KeepToonBuffed.mac by Kroaking
-|   Last Updated: December 5th, 2025 - 03:15:00 PM
+|   Last Updated: December 6th, 2025 - 04:09:00 PM
 |
-|   v2.0.5
+|   v2.0.6
 |
 |   This macro is designed to allow an out of group PowerLeveling toon
 |   to be able to target members of a low level group, heal, 
@@ -30,7 +30,7 @@ Sub Main
 
 |==================== DO NOT ALTER THESE VALUES ====================
 /declare MacroName			string	outer	KeepToonBuffed
-/declare KeepToonBuffVer	string	outer	2.0.5
+/declare KeepToonBuffVer	string	outer	2.0.6
 /declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 /declare FirstRun			int		outer	0
 /declare x					int		outer	0
@@ -101,12 +101,12 @@ Sub Main
 
 |--------------------------------------------------------------
 /if (${FollowGroup} && !${Navigation.MeshLoaded}) {
-	/message No nav mesh loaded! You will need a mesh for this zone in order for follow to work.
-	/message Turning off FollowGroup.
+	/message \awNo nav mesh loaded! You will need a mesh for this zone in order for follow to work.
+	/message \awTurning off FollowGroup.
 	/varset FollowGroup 0
 }
 |--------------------------------------------------------------
-|==================== DO NOT ALTER THESE VALUES ====================
+|==================== DO NOT ALTER THESE VALUES ===================a=
 
 |---------------------------------------------------------------------------------
 
@@ -172,7 +172,7 @@ Sub Main
     /if (${AssistOn}) /call AssistOnTarget
     |Internal second delay to allow for manual moving, prevents constant sit loop if only 1 toon being buffed.
     /delay 10
-    /if (${Me.Standing} && !${Me.Casting.ID} && !${Me.CombatState.Equal[COMBAT]} && !${Me.Moving} && !${Me.Mount.ID}) /sit 
+    /if (${Me.Standing} && !${Me.Casting.ID} && !${Me.CombatState.Equal[COMBAT]} && !${Me.Moving} && !${Me.Mount.ID} && (${Me.PctMana}<${MinManaMedPct})) /sit 
   
 /goto :loop
 
