@@ -1,9 +1,9 @@
 |****************************************************************************************************************
 |   KeepToonBuffed - by Kroaking
 |   based on KeepToonBuffed.mac by Kroaking
-|   Last Updated: December 6th, 2025 - 04:09:00 PM
+|   Last Updated: February 5th, 2026 - 11:06:00 AM
 |
-|   v2.0.6
+|   v2.0.7
 |
 |   This macro is designed to allow an out of group PowerLeveling toon
 |   to be able to target members of a low level group, heal, 
@@ -30,7 +30,7 @@ Sub Main
 
 |==================== DO NOT ALTER THESE VALUES ====================
 /declare MacroName			string	outer	KeepToonBuffed
-/declare KeepToonBuffVer	string	outer	2.0.6
+/declare KeepToonBuffVer	string	outer	2.0.7
 /declare IniFileName		string	outer	${MacroName}_${Me.CleanName}.ini
 /declare FirstRun			int		outer	0
 /declare x					int		outer	0
@@ -62,6 +62,7 @@ Sub Main
 /call LoadIni Heal HealsOn					bool	TRUE
 /call LoadIni Heal HealSpell				string	NULL
 /call LoadIni Heal HealPct					int		60
+/call LoadIni Heal MyHealPct				int		70
 /declare HealSpellRange 					int 	outer 	${Spell[${HealSpell}].Range}
 
 | ################## Set up [Toons] values
@@ -155,10 +156,7 @@ Sub Main
 
 	/message \atGood to Go !!!\ax \ar--\ax \ayStarting routines . . .\aw
 	|---------------------------
-	/for x 1 to ${NumberOfToons}
-		/e3bct ${MyBuffTargetName[${x}]} /popcustom 13 2 + Good to Go !!! -- Starting routines . . .
-	/next x	
-	/delay 2s		
+	/e3bct ${MyBuffTargetName[1]} /popcustom 13 2 + Good to Go !!! -- Starting routines . . .
 	|---------------------------
 	/message ==================================================================
 
@@ -307,34 +305,16 @@ Sub LoadIni(string sectionName, string varName, string varType, string varValue,
 |---------------------------------------------------------------------------------
 Sub CheckMyHealth
 
-/if (${Me.PctHPs}<=${HealPct}) {
+/if (${Me.PctHPs}<=${MyHealPct}) {
     /if (${Target.ID}!=${Me.ID}) {
          /if (${Debug}) /message \awAttempting to target \am(\at${Me.CleanName}\am)\aw for heals!
          /squelch /target id ${Me.ID} pc targetable
          /delay 15 !${Target.ID}   
-		 /message \awMy health is \am(\ao${Me.PctHPs}\am)\aw, healing myself with \am(\at${HealSpell}\am)\aw.
-         /casting "${HealSpell}" gem8
-         /call WaitSpellReady
+		 /message \awMy health is \am(\ao${Me.PctHPs}\am)\aw, healing myself with \am(\at${HealSpell}\am)\aw.	 
+		 /call CastSpell ${Me.ID} ${Me.CleanName} "${HealSpell}"
     }
 }
 
-/return
-|---------------------------------------------------------------------------------
-
-|---------------------------------------------------------------------------------
-| SUB: CastSpell
-|---------------------------------------------------------------------------------
-Sub CastSpell(int SpellTarget, string SpellToCast)
-	/if (${AdminDebug}) {
-		/message \awCastSpell called with \am(\ay${SpellTarget}\ao, \ay${SpellToCast}\am)\aw
-	}
-	/squelch /target id ${SpellTarget}
-	/delay 10 ${Target.ID}==${SpellTarget}
-	/if (${Me.GemTimer[${Spell}]}==0 || ${Me.SpellReady[${SpellToCast}]}) {
-		/cast "${SpellToCast}"
-	}
-	/delay 10
-	/call WaitSpellReady
 /return
 |---------------------------------------------------------------------------------
 
@@ -362,9 +342,11 @@ Sub CheckTargetHealth
 			/varset currentHealth ${Macro.Return}  
 
 			/if ((${currentHealth}<=${HealPct}) && (${Target.Distance}<=${HealSpellRange}) && ${Cast.Ready["${HealSpell}"]}) {
-				/message \am(\at${MyBuffTargetName[${j}]}'s\am)\aw health at \am(\ao${currentHealth}\am)\aw, -- \arHEAL TIME !!!\aw				
-				/e3bct ${MyBuffTargetName[${j}]} /popcustom 14 2 + HEAL TIME !!!
-				/call CastSpell ${Spawn[${MyBuffTargetName[${j}]}].ID} "${HealSpell}"
+				/message \am(\at${MyBuffTargetName[${j}]}'s\am)\aw health at \am(\ao${currentHealth}\am)\aw, -- \arHEAL TIME !!!\aw								
+				|---------------------------
+				/e3bct ${MyBuffTargetName[1]} /popcustom 14 2 + HEAL TIME to [${Spawn[${MyBuffTargetName[${j}]}].CleanName}] @${currentHealth}% hp !!!				
+				|---------------------------
+				/call CastSpell ${Spawn[${MyBuffTargetName[${j}]}].ID} ${Spawn[${MyBuffTargetName[${j}]}].CleanName} "${HealSpell}"
 			}
 		}
 		
@@ -416,9 +398,11 @@ Sub MaintainTargetBuffs
 					|--
 					/call QueryBuff "${MyBuffTargetName[${j}]}" "${BuffIDName}"	
 					/if (!${Macro.Return} && ${Cast.Ready["${SpellToCast}"]}) {										
-						/message \awBuffing \am(\at${MyBuffTargetName[${j}]}\am)\aw with \am(\ag${SpellToCast}\am)\aw.
-						/e3bct ${MyBuffTargetName[${j}]} /popcustom 18 2 + Buffing: (${SpellToCast})
-						/call CastSpell ${Spawn[=${MyBuffTargetName[${j}]}].ID} "${SpellToCast}"
+						/message \awBuffing \am(\at${MyBuffTargetName[${j}]}\am)\aw with \am(\ag${SpellToCast}\am)\aw.						
+						|---------------------------
+						/e3bct ${MyBuffTargetName[1]} /popcustom 18 2 + Buffing: (${SpellToCast}) on [${Spawn[=${MyBuffTargetName[${j}]}].CleanName}].				
+						|---------------------------
+						/call CastSpell ${Spawn[=${MyBuffTargetName[${j}]}].ID} ${Spawn[=${MyBuffTargetName[${j}]}].CleanName} "${SpellToCast}"
 					}
 			/next i
 			|--------------------------------------------------------------------------------
@@ -475,11 +459,9 @@ Sub AssistOnTarget
 	/if (${TargetID} > 0 && ${Cast.Ready["${SpellToCast}"]}) {
 		/message \awAttempting to assist, casting \am(\ay${SpellToCast}\am) \awon \am(\ar${Spawn[${TargetID}].CleanName}\am)\aw.
 		|---------------------------
-		/for y 1 to ${NumberOfToons}
-			/e3bct ${MyBuffTargetName[${y}]} /popcustom 15 2 + Casting (${SpellToCast}) on (${Spawn[${TargetID}].CleanName})
-		/next y		
+		/e3bct ${MyBuffTargetName[1]} /popcustom 15 2 + Casting (${SpellToCast}) on (${Spawn[${TargetID}].CleanName})
 		|---------------------------
-		/call CastSpell ${TargetID} "${SpellToCast}"
+		/call CastSpell ${TargetID} ${Spawn[${TargetID}].CleanName} "${SpellToCast}"
 	}
 /return
 |---------------------------------------------------------------------------------
@@ -538,6 +520,30 @@ Sub FollowAround
 		}
 		/nav stop
 	}
+/return
+|---------------------------------------------------------------------------------
+
+
+|---------------------------------------------------------------------------------
+| SUB: CastSpell
+|---------------------------------------------------------------------------------
+Sub CastSpell(int SpellTargetID, string SpellTargetName, string SpellToCast)
+	/if (${AdminDebug}) {
+		/message \awCastSpell called with \am(\ay${SpellTargetID}\ao, \ay${SpellTargetName}\ao, \ay${SpellToCast}\am)\aw
+	}
+	
+	:GetTarget
+	/message Aquiring Target: \am(\ay${SpellTargetID}\am | \ay${SpellTargetName}\am)\aw
+	/target id ${SpellTargetID}
+	/delay 10 ${Target.ID}==${SpellTargetID}
+	/if (!${Target.ID} || (${Target.ID}!=${SpellTargetID})) /goto :GetTarget
+	
+	/if (${Me.GemTimer[${SpellToCast}]}==0 || ${Me.SpellReady[${SpellToCast}]}) {
+		/cast "${SpellToCast}"
+	}
+	
+	/delay 10
+	/call WaitSpellReady
 /return
 |---------------------------------------------------------------------------------
 
